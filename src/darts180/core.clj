@@ -1,7 +1,8 @@
 (ns darts180.core
   (:gen-class)
   (:use [seesaw [core :as s]
-                [graphics :as g]]))
+                [graphics :as g]
+                [font :as f]]))
 
 (def board-center (atom [0 0 ]))
 (def board-radius (atom 0))
@@ -27,13 +28,17 @@
 (defn- get-bull-diameter [diameter]
   (get-diameter diameter 2))
 
+
+(defn radian->degree "Converts radian to degree" [radian]
+  (-> radian (/ Math/PI) (* 180)))
+
 (defn fill-arc "Fills a pizza segment" [graphics position radius x color]
-  (doto graphics 
+  (doto graphics
     (.setColor color)
     (.fillArc position position radius radius (-> x (* 18) (- 10)) 18)))
 
 (defn draw-arc "Draws a pizza segment" [graphics position radius x color]
-  (doto graphics 
+  (doto graphics
     (.setColor color)
     (.drawArc position position radius radius (-> x (* 18) (- 10)) 18)))
 
@@ -51,7 +56,7 @@
         inner-singles-diameter (get-inner-singles-diameter doubles-diameter)
         inner-singles-center (-> doubles-diameter (- inner-singles-diameter) (/ 2))
         semi-diameter (get-semi-diameter doubles-diameter)
-        bull-diameter (get-bull-diameter doubles-diameter) 
+        bull-diameter (get-bull-diameter doubles-diameter)
         black (java.awt.Color/BLACK)
         bright (java.awt.Color. 247 236 170)
         red (java.awt.Color/RED)
@@ -75,8 +80,6 @@
     (g/draw graphics (g/circle min-w2-h2 min-w2-h2 semi-diameter) semi-style)
     (g/draw graphics (g/circle min-w2-h2 min-w2-h2 bull-diameter) bull-style)))
 
-(defn radian->degree "Converts radian to degree" [radian]
-  (-> radian (/ Math/PI) (* 180)))
 
 (defn score-literal "Get a literal like T20 or D10 representing the score which corresponds to
                     the given point" [point]
@@ -96,22 +99,20 @@
       (<= distance triples-diameter) (str "T" number)
       (<= distance (get-outer-singles-diameter radius)) (str "S" number)
       (<= distance radius) (str "D" number)
-      :else "other")))
-
-(defn log-score "Log the on-mouse-over score of the board in the label" [board a-label]
-  (listen board :mouse-moved 
-          (fn [e] (let [point (.getPoint e)
-                        score (score-literal point)]
-                    (text! a-label (str "Score: " score))))))
-
-(def board-canvas (s/canvas :background "#BBBBDD" :id :board :paint draw-board))
+      :else "Not in board")))
 
 (defn redraw-board "Redraws the board canvas" []
   (config! board-canvas :paint draw-board))
 
-(def score-label (label :text "SCORE"))
-(def content-panel (s/border-panel :hgap 10 :vgap 10 :center board-canvas :east score-label ))
+(defn log-score "Log the on-mouse-over score of the board in the label" [board a-label]
+  (listen board :mouse-moved
+          (fn [e] (let [point (.getPoint e)
+                        score (score-literal point)]
+                    (text! a-label score)))))
 
+(def board-canvas (s/canvas :background "#BBBBDD" :id :board :paint draw-board))
+(def score-label (label :text "SCORE" :font (f/font "ARIAL-BOLD-20")))
+(def content-panel (s/border-panel :hgap 10 :vgap 10 :center board-canvas :south score-label ))
 (def my-frame (s/frame :width 500 :height 500 :title "Darts180" :content content-panel))
 
 (defn log "Log" []
